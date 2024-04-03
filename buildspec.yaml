@@ -7,7 +7,9 @@ phases:
   pre_build:
     commands:
       - echo Nothing to do in the pre_build phase...moving on...
-           
+      - echo "version controller"
+      - yum update -y
+      - yum install jq -y           
   build:
     commands:
       - echo "Starting Build"
@@ -35,7 +37,7 @@ phases:
       # copying zipped files to cross account s3 bucket which will be utilised for codedeploy
       - echo "copying zipped files to cross account s3 bucket which will be utilised for codedeploy"
       - aws s3 cp code-deploy.zip s3://matson-code-deploy-artifact/zip-file/
-      
+
       # - echo "codedeploy deployment started"
       # - aws deploy create-deployment --application-name ohana-api-application --deployment-config-name CodeDeployDefault.OneAtATime --deployment-group-name ohana-api-deploygroup --description "Deployment Description" --s3-location bucket=$SITE_BUCKET,bundleType=zip,key=$DEPLOYMENT_PACKAGE_NAME --region us-west-2
       # - deploymentId=$(aws deploy list-deployments --application-name ohana-api-application --deployment-group-name ohana-api-deploygroup --region us-west-2 --query 'deployments[0]' --output text)
