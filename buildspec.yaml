@@ -1,0 +1,58 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      java: corretto17
+  pre_build:
+    commands:
+      - echo Nothing to do in the pre_build phase...moving on...
+           
+  build:
+    commands:
+      - echo "Starting Build"
+      - cd ./HelloLambda
+      - mvn clean package
+      - echo Build completed on `date`
+      - ls ./target
+
+  post_build:
+    commands:
+      - echo copying jar file to s3 bucket
+      - aws s3 cp ./target/lambda-java-example-1.0-SNAPSHOT.jar ../
+      - aws s3 cp ./target/lambda-java-example-1.0-SNAPSHOT.jar s3://ssk-cft-2/new-jar/lambda-java-example-1.0-SNAPSHOT.jar
+      - cd ..
+      - zip -r code-deploy.zip lambda-java-example-1.0-SNAPSHOT.jar app-start-stop.sh appspec.yml
+      - aws s3 cp code-deploy.zip s3://ssk-cft-2/matson-artifact-zip/
+
+      # - echo "Extracting and assuming Deployer role for cross account"
+      # - param_name=/ohana-api/$STAGE/deploy/role
+      # - DEPLOY_ROLE=$(aws ssm get-parameter --name $param_name --with-decryption | jq ".Parameter.Value" | tr -d \")
+      # - role=$(aws sts assume-role --role-arn $DEPLOY_ROLE --role-session-name ohana-api-deployer-session --duration-seconds 900)
+      # - KEY=$(echo $role | jq ".Credentials.AccessKeyId" --raw-output)
+      # - SECRET=$(echo $role | jq ".Credentials.SecretAccessKey" --raw-output)
+      # - TOKEN=$(echo $role | jq ".Credentials.SessionToken" --raw-output)
+      # - export AWS_ACCESS_KEY_ID=$KEY
+      # - export AWS_SESSION_TOKEN=$TOKEN
+      # - export AWS_SECRET_ACCESS_KEY=$SECRET
+      # - export AWS_DEFAULT_REGION=us-west-2
+      # - echo "zipping files for codedeploy "
+      # - DEPLOYMENT_PACKAGE_NAME="deployment-package-$(date +"%Y%m%d%H%M%S").zip"
+      # - sed -i "s|{{WAR_FILE_NAME}}|ohana-api.war|g" appspec.yml
+      # - sed -i "s|\$WAR_FILE_NAME|ohana-api.war|g" application_stop_start.sh
+      # - cat appspec.yml
+      # - cat application_stop_start.sh
+      # - zip -r $DEPLOYMENT_PACKAGE_NAME appspec.yml application_stop_start.sh ohana-api.war
+      # - echo "copying zipped files to cross account s3 bucket which will be utilised for codedeploy"
+      # - aws s3 cp $DEPLOYMENT_PACKAGE_NAME $CROSS_ACCOUNT_S3_BUCKET_PATH/$DEPLOYMENT_PACKAGE_NAME 
+      # - aws sts get-caller-identity
+      # - echo "codedeploy deployment started"
+      # - aws deploy create-deployment --application-name ohana-api-application --deployment-config-name CodeDeployDefault.OneAtATime --deployment-group-name ohana-api-deploygroup --description "Deployment Description" --s3-location bucket=$SITE_BUCKET,bundleType=zip,key=$DEPLOYMENT_PACKAGE_NAME --region us-west-2
+      # - deploymentId=$(aws deploy list-deployments --application-name ohana-api-application --deployment-group-name ohana-api-deploygroup --region us-west-2 --query 'deployments[0]' --output text)
+      # - echo "Waiting for deployment to complete..."
+      # - aws deploy wait deployment-successful --deployment-id $deploymentId --region us-west-2
+      # - echo "deployment finished"
+    
+artifacts:
+  files: "**/*.war"
+  discard-paths: yes

@@ -1,0 +1,14 @@
+### appspec.yml ###
+version: 0.0
+os: linux
+files:
+  - source: /lambda-java-example-1.0-SNAPSHOT.jar
+    destination: /tmp/
+
+file_exists_behavior: OVERWRITE
+hooks:
+  ApplicationStop:
+    - location: application_stop_start.sh
+      timeout: 300
+      runas: root
+  
