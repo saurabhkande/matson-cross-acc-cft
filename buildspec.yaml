@@ -18,34 +18,24 @@ phases:
 
   post_build:
     commands:
-      - echo copying jar file to s3 bucket
-      # - aws s3 cp ./target/lambda-java-example-1.0-SNAPSHOT.jar ../
+      - echo "copying jar file to s3 bucket in CI/source Account"
       - aws s3 cp ./target/lambda-java-example-1.0-SNAPSHOT.jar s3://ssk-cft-2/matson-artifact-zip/jar-file/lambda-java-example-1.0-SNAPSHOT.jar
       - cd ..
+      # zipping files for codedeploy
+      - echo "zipping files for codedeploy "
       - zip -r code-deploy.zip ./HelloLambda/target/lambda-java-example-1.0-SNAPSHOT.jar app-start-stop.sh appspec.yml
       - aws s3 cp code-deploy.zip s3://ssk-cft-2/matson-artifact-zip/zip/
-
-      # - echo "Extracting and assuming Deployer role for cross account"
-      # - param_name=/ohana-api/$STAGE/deploy/role
-      # - DEPLOY_ROLE=$(aws ssm get-parameter --name $param_name --with-decryption | jq ".Parameter.Value" | tr -d \")
-      # - role=$(aws sts assume-role --role-arn $DEPLOY_ROLE --role-session-name ohana-api-deployer-session --duration-seconds 900)
-      # - KEY=$(echo $role | jq ".Credentials.AccessKeyId" --raw-output)
-      # - SECRET=$(echo $role | jq ".Credentials.SecretAccessKey" --raw-output)
-      # - TOKEN=$(echo $role | jq ".Credentials.SessionToken" --raw-output)
-      # - export AWS_ACCESS_KEY_ID=$KEY
-      # - export AWS_SESSION_TOKEN=$TOKEN
-      # - export AWS_SECRET_ACCESS_KEY=$SECRET
-      # - export AWS_DEFAULT_REGION=us-west-2
-      # - echo "zipping files for codedeploy "
-      # - DEPLOYMENT_PACKAGE_NAME="deployment-package-$(date +"%Y%m%d%H%M%S").zip"
-      # - sed -i "s|{{WAR_FILE_NAME}}|ohana-api.war|g" appspec.yml
-      # - sed -i "s|\$WAR_FILE_NAME|ohana-api.war|g" application_stop_start.sh
-      # - cat appspec.yml
-      # - cat application_stop_start.sh
-      # - zip -r $DEPLOYMENT_PACKAGE_NAME appspec.yml application_stop_start.sh ohana-api.war
-      # - echo "copying zipped files to cross account s3 bucket which will be utilised for codedeploy"
-      # - aws s3 cp $DEPLOYMENT_PACKAGE_NAME $CROSS_ACCOUNT_S3_BUCKET_PATH/$DEPLOYMENT_PACKAGE_NAME 
-      # - aws sts get-caller-identity
+      # Asssuming role for cross account deployment
+      - echo "Asssuming role for cross account deployment"
+      - aws sts assume-role --role-arn arn:aws:iam::637423476845:role/matson_codedeploy --role-session-name ohana-api-deployer-session --duration-seconds 900
+      - export AWS_ACCESS_KEY_ID=$(jq -r '.Credentials.AccessKeyId' assume-role-output.json)
+      - export AWS_SECRET_ACCESS_KEY=$(jq -r '.Credentials.SecretAccessKey' assume-role-output.json)
+      - export AWS_SESSION_TOKEN=$(jq -r '.Credentials.SessionToken' assume-role-output.json)
+      - aws sts get-caller-identity
+      # copying zipped files to cross account s3 bucket which will be utilised for codedeploy
+      - echo "copying zipped files to cross account s3 bucket which will be utilised for codedeploy"
+      - aws s3 cp code-deploy.zip s3://matson-code-deploy-artifact/zip-file/
+      
       # - echo "codedeploy deployment started"
       # - aws deploy create-deployment --application-name ohana-api-application --deployment-config-name CodeDeployDefault.OneAtATime --deployment-group-name ohana-api-deploygroup --description "Deployment Description" --s3-location bucket=$SITE_BUCKET,bundleType=zip,key=$DEPLOYMENT_PACKAGE_NAME --region us-west-2
       # - deploymentId=$(aws deploy list-deployments --application-name ohana-api-application --deployment-group-name ohana-api-deploygroup --region us-west-2 --query 'deployments[0]' --output text)
@@ -54,5 +44,5 @@ phases:
       # - echo "deployment finished"
     
 artifacts:
-  files: "**/*.war"
+  files: "**/*.jar"
   discard-paths: yes
