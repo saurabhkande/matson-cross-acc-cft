@@ -19,10 +19,10 @@ phases:
   post_build:
     commands:
       - echo copying jar file to s3 bucket
-      - aws s3 cp ./target/lambda-java-example-1.0-SNAPSHOT.jar ../
+      # - aws s3 cp ./target/lambda-java-example-1.0-SNAPSHOT.jar ../
       - aws s3 cp ./target/lambda-java-example-1.0-SNAPSHOT.jar s3://ssk-cft-2/new-jar/lambda-java-example-1.0-SNAPSHOT.jar
       - cd ..
-      - zip -r code-deploy.zip lambda-java-example-1.0-SNAPSHOT.jar app-start-stop.sh appspec.yml
+      - zip -r code-deploy.zip ./target/lambda-java-example-1.0-SNAPSHOT.jar app-start-stop.sh appspec.yml
       - aws s3 cp code-deploy.zip s3://ssk-cft-2/matson-artifact-zip/
 
       # - echo "Extracting and assuming Deployer role for cross account"
