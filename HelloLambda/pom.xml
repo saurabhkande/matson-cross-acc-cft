@@ -41,4 +41,28 @@
       </plugin>
     </plugins>
   </build>
+  
+<profiles>
+  <profile>
+    <id>matson-ohio-domain-matson-repo</id>
+    <activation>
+      <activeByDefault>true</activeByDefault>
+    </activation>
+    <repositories>
+      <repository>
+        <id>matson-ohio-domain-matson-repo</id>
+        <url>https://matson-ohio-domain-787367675716.d.codeartifact.us-east-2.amazonaws.com/maven/matson-repo/</url>
+      </repository>
+    </repositories>
+  </profile>
+</profiles>
+
+<servers>
+  <server>
+    <id>matson-ohio-domain-matson-repo</id>
+    <username>aws</username>
+    <password>${env.CODEARTIFACT_AUTH_TOKEN}</password>
+  </server>
+</servers>
+
 </project>

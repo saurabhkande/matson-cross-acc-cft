@@ -14,36 +14,38 @@ phases:
     commands:
       - echo "Starting Build"
       - cd ./HelloLambda
-      - mvn clean package
+      # - mvn clean package
       - echo Build completed on `date`
-      - ls ./target
+      # - ls ./target
 
   post_build:
     commands:
-      - echo "copying jar file to s3 bucket in CI/source Account"
-      - aws s3 cp ./target/lambda-java-example-1.0-SNAPSHOT.jar s3://ssk-cft-2/matson-artifact-zip/jar-file/lambda-java-example-1.0-SNAPSHOT.jar
-      - cd ..
-      # zipping files for codedeploy
-      - echo "zipping files for codedeploy "
-      - zip -r code-deploy.zip ./HelloLambda/target/lambda-java-example-1.0-SNAPSHOT.jar app-start-stop.sh appspec.yml
-      - aws s3 cp code-deploy.zip s3://ssk-cft-2/matson-artifact-zip/zip/
-      # Asssuming role for cross account deployment
-      - echo "Asssuming role for cross account deployment"
-      - aws sts assume-role --role-arn arn:aws:iam::637423476845:role/matson_codedeploy --role-session-name ohana-api-deployer-session --duration-seconds 900 > assume-role-output.json
-      - export AWS_ACCESS_KEY_ID=$(jq -r '.Credentials.AccessKeyId' assume-role-output.json)
-      - export AWS_SECRET_ACCESS_KEY=$(jq -r '.Credentials.SecretAccessKey' assume-role-output.json)
-      - export AWS_SESSION_TOKEN=$(jq -r '.Credentials.SessionToken' assume-role-output.json)
-      - aws sts get-caller-identity
-      # copying zipped files to cross account s3 bucket which will be utilised for codedeploy
-      - echo "copying zipped files to cross account s3 bucket which will be utilised for codedeploy"
-      - aws s3 cp code-deploy.zip s3://matson-code-deploy-artifact/zip-file/
+      - export CODEARTIFACT_AUTH_TOKEN=`aws codeartifact get-authorization-token --domain matson-ohio-domain --domain-owner 787367675716 --region us-east-2 --query authorizationToken --output text`
+      - mvn -s pom.xml clean package deploy
+      # - echo "copying jar file to s3 bucket in CI/source Account"
+      # - aws s3 cp ./target/lambda-java-example-1.0-SNAPSHOT.jar s3://ssk-cft-2/matson-artifact-zip/jar-file/lambda-java-example-1.0-SNAPSHOT.jar
+      # - cd ..
+      # # zipping files for codedeploy
+      # - echo "zipping files for codedeploy "
+      # - zip -r code-deploy.zip ./HelloLambda/target/lambda-java-example-1.0-SNAPSHOT.jar app-start-stop.sh appspec.yml
+      # - aws s3 cp code-deploy.zip s3://ssk-cft-2/matson-artifact-zip/zip/
+      # # Asssuming role for cross account deployment
+      # - echo "Asssuming role for cross account deployment"
+      # - aws sts assume-role --role-arn arn:aws:iam::637423476845:role/matson_codedeploy --role-session-name ohana-api-deployer-session --duration-seconds 900 > assume-role-output.json
+      # - export AWS_ACCESS_KEY_ID=$(jq -r '.Credentials.AccessKeyId' assume-role-output.json)
+      # - export AWS_SECRET_ACCESS_KEY=$(jq -r '.Credentials.SecretAccessKey' assume-role-output.json)
+      # - export AWS_SESSION_TOKEN=$(jq -r '.Credentials.SessionToken' assume-role-output.json)
+      # - aws sts get-caller-identity
+      # # copying zipped files to cross account s3 bucket which will be utilised for codedeploy
+      # - echo "copying zipped files to cross account s3 bucket which will be utilised for codedeploy"
+      # - aws s3 cp code-deploy.zip s3://matson-code-deploy-artifact/zip-file/
 
-      # - echo "codedeploy deployment started"
-      # - aws deploy create-deployment --application-name ohana-api-application --deployment-config-name CodeDeployDefault.OneAtATime --deployment-group-name ohana-api-deploygroup --description "Deployment Description" --s3-location bucket=$SITE_BUCKET,bundleType=zip,key=$DEPLOYMENT_PACKAGE_NAME --region us-west-2
-      # - deploymentId=$(aws deploy list-deployments --application-name ohana-api-application --deployment-group-name ohana-api-deploygroup --region us-west-2 --query 'deployments[0]' --output text)
-      # - echo "Waiting for deployment to complete..."
-      # - aws deploy wait deployment-successful --deployment-id $deploymentId --region us-west-2
-      # - echo "deployment finished"
+      # # - echo "codedeploy deployment started"
+      # # - aws deploy create-deployment --application-name ohana-api-application --deployment-config-name CodeDeployDefault.OneAtATime --deployment-group-name ohana-api-deploygroup --description "Deployment Description" --s3-location bucket=$SITE_BUCKET,bundleType=zip,key=$DEPLOYMENT_PACKAGE_NAME --region us-west-2
+      # # - deploymentId=$(aws deploy list-deployments --application-name ohana-api-application --deployment-group-name ohana-api-deploygroup --region us-west-2 --query 'deployments[0]' --output text)
+      # # - echo "Waiting for deployment to complete..."
+      # # - aws deploy wait deployment-successful --deployment-id $deploymentId --region us-west-2
+      # # - echo "deployment finished"
     
 artifacts:
   files: "**/*.jar"
