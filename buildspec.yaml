@@ -15,13 +15,13 @@ phases:
       - echo "Starting Build"
       - cd ./HelloLambda
       # - mvn clean package
-      - echo Build completed on `date`
       # - ls ./target
 
   post_build:
     commands:
       - export CODEARTIFACT_AUTH_TOKEN=`aws codeartifact get-authorization-token --domain matson-ohio-domain --domain-owner 787367675716 --region us-east-2 --query authorizationToken --output text`
-      - mvn -s pom.xml clean package deploy
+      - mvn -s settings.xml clean package deploy
+      - echo Build completed on `date`
       # - echo "copying jar file to s3 bucket in CI/source Account"
       # - aws s3 cp ./target/lambda-java-example-1.0-SNAPSHOT.jar s3://ssk-cft-2/matson-artifact-zip/jar-file/lambda-java-example-1.0-SNAPSHOT.jar
       # - cd ..
